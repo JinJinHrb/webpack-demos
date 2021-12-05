@@ -1,9 +1,10 @@
 {
-  "name": "webpack-demo2",
-  "version": "1.0.0",
-  "scripts": {
-    "dev": "webpack-dev-server --open",
-    "build": "webpack -p"
-  },
-  "license": "MIT"
+    "name": "webpack-demo2",
+    "version": "1.0.0",
+    "scripts": {
+        "dev": "webpack server --open --mode production",
+        "build": "webpack --mode production"
+    },
+    "license": "MIT"
 }
+  
