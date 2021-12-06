@@ -602,7 +602,7 @@ Now pass environment variable into webpack. Opening `demo09/package.json`, you s
 {
   // ...
   "scripts": {
-    "dev": "cross-env DEBUG=true webpack-dev-server --open",
+    "dev": "cross-env DEBUG=true webpack server --open --mode production",
   },
   // ...
 }

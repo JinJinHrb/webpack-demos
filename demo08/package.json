@@ -2,8 +2,8 @@
   "name": "webpack-demo08",
   "version": "1.0.0",
   "scripts": {
-    "dev": "webpack-dev-server",
-    "build": "webpack"
+    "dev": "webpack server --open --mode production",
+    "build": "webpack --mode production"
   },
   "license": "MIT"
 }

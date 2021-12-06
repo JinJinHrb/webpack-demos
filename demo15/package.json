@@ -2,7 +2,7 @@
   "name": "webpack-demo15",
   "version": "1.0.0",
   "scripts": {
-    "dev": "webpack-dev-server --open --history-api-fallback",
+    "dev": "webpack server --open --mode production --history-api-fallback",
     "build": "webpack"
   },
   "license": "MIT",
