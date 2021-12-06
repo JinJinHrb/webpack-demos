@@ -1,0 +1,1 @@
+(self.webpackChunkwebpack_demo10=self.webpackChunkwebpack_demo10||[]).push([[847],{847:e=>{e.exports="Hello World"}}]);
