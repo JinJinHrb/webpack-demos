@@ -1,0 +1,12 @@
+{
+  "name": "webpack-demo15",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "webpack server --open --mode production --history-api-fallback",
+    "build": "webpack --mode production"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "react-router-dom": "^4.2.2"
+  }
+}
