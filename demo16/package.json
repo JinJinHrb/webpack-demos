@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "scripts": {
     "dev": "webpack server --open --mode production --history-api-fallback",
+    "debug-build": "node --inspect-brk ../node_modules/webpack/bin/webpack.js --mode production",
     "build": "webpack --mode production"
   },
   "license": "MIT",
