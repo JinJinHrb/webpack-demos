@@ -1,3 +1,5 @@
 node_modules
 npm-debug.log
 package-lock.json
+demo16/dist
+demo16/dist2

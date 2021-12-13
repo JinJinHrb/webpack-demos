@@ -3,6 +3,10 @@ const fs = require('fs')
 const Path = require('path')
 const _L = require('lodash')
 const Phin = require('phin')
+const logger = {
+    info: console.log,
+    error: console.error
+}
 
 /**
  * 参考 https://segmentfault.com/a/1190000021821557
@@ -16,10 +20,14 @@ class SetScriptTimestampPlugin {
     constructor(params){
         params = params || {}
         this.author = _L.trim(params.author)
-        this.targetFolderPath = _L.trim(params.targetFolderPath)
-        this.url = _L.trim(params.url) // 上传 OSS 路径
+        this.indexTargetPath = _L.trim(params.indexTargetPath) // index.html 目标位置
+        this.uploadUrl = _L.trim(params.uploadUrl) // 上传 OSS 路径
+        this.baseUrl = _L.trim(params.baseUrl) // 上传 OSS 前缀
         this.password = _L.trim(params.password) // 上传 OSS 密码
         this.ossKey = _L.trim(params.ossKey) // 上传 OSS 前缀
+        if(this.baseUrl &&!_L.endsWith(this.baseUrl, '/')){
+            this.baseUrl = this.baseUrl + '/'
+        }
     }
 
     apply(compiler) {
@@ -41,48 +49,96 @@ class SetScriptTimestampPlugin {
             }
         ) */
         compiler.hooks.done.tap('SetScriptTimestampPlugin', async (stats) => {
-            const context = stats?.compilation?.options?.context
-            const comparedForEmitAssets = stats?.compilation?.comparedForEmitAssets || new Set()
-            const jsPaths = []
-            const htmlPaths = []
-            let idx = 0
-            comparedForEmitAssets.forEach((el) => {
-                console.log(`comparedForEmitAssets ${idx++}:`, el)
-                if(_L.endsWith(el, '.js')){
-                    jsPaths.push(el)
-                }else if(_L.endsWith(el, '.html')){
-                    htmlPaths.push(Path.resolve(context, 'dist', el))
-                }
-            })
-            console.log('absPaths:', htmlPaths, jsPaths)
-            const reqdata = {
-                author: this.author,
-                createdAt: hdlUtil.date2string(new Date(), 'ss')
-            };
-            const attachments = htmlPaths.map((a, idx) => {
-                const lastSlashIdx = a.lastIndexOf(Path.sep);
-                const fdFilename = a.slice(lastSlashIdx + 1);
-                return [fdFilename, a]
-            }).filter((a, idx, arr) => {
-                for(let i=0; i<Math.min(arr.length, idx); i++){
-                    if(a[0] === arr[i][0]){
-                        return false
+            try{
+                const context = stats?.compilation?.options?.context
+                const dirPath = Path.resolve(context, 'dist')
+
+                /* 
+                const jsPaths = []
+                const htmlPaths = []
+                const comparedForEmitAssets = stats?.compilation?.comparedForEmitAssets || new Set()
+                let idx = 0
+                comparedForEmitAssets.forEach((el) => {
+                    console.log(`comparedForEmitAssets ${idx++}:`, el)
+                    if(_L.endsWith(el, '.js')){
+                        jsPaths.push(el)
+                    }else if(_L.endsWith(el, '.html')){
+                        htmlPaths.push(Path.resolve(dirPath, el))
                     }
+                })
+                console.log('absPaths:', htmlPaths, jsPaths) */
+                
+                const feed = await new Promise((rsv, rej) => {
+                    fs.readdir(dirPath, function(err, rsp){
+                        if(err){
+                            return rej(err);
+                        }
+                        if(!rsp){
+                            rsp = [];
+                        }
+                        rsp = rsp.filter(a => a.indexOf('.') !== 0).map(a => Path.resolve(dirPath, a))
+                        rsv(rsp);
+                    })
+                })
+
+                const jsPaths = feed.filter(a => _L.endsWith(a, '.js'))
+                const htmlPaths = feed.filter(a => _L.endsWith(a, '.html'))
+                console.log('readdir #77:', jsPaths, htmlPaths)
+                
+                // 1. alter index.html
+                // 2. move directory
+                const alterHtmlPromises = htmlPaths.map(el => new Promise((rsv, rej) => {
+                    let rst
+                    getFileDataPromise(el).then(content => {
+                        const extracts = Array.prototype.slice.call(content.match(/src="[^"]+"/))
+                        const substitutes = extracts.map(a => a.replace('src="', '').replace(/"$/, '')).map(a => `src="${this.baseUrl}${a}"`)
+                        extracts.forEach((a, idx) => {
+                            const substitute = substitutes[idx]
+                            content = content.replace(a, substitute)
+                        })
+                        rst = fs.writeFileSync(el, content, {encoding: 'utf8'})
+                        if(_L.endsWith(el, 'index.html') && this.indexTargetPath){
+                            return moveFilePromise(el, this.indexTargetPath)
+                        }
+                    }).then(() => {
+                        rsv(rst)
+                    }, err => {
+                        rej(err)
+                    })
+                }))
+
+                await Promise.all(alterHtmlPromises)
+                
+                // 3. upload OSS
+                if(this.uploadUrl){
+                    const reqdata = {
+                        author: this.author,
+                        createdAt: hdlUtil.date2string(new Date(), 'ss')
+                    };
+                    const attachments = jsPaths.map((a, idx) => {
+                        const lastSlashIdx = a.lastIndexOf(Path.sep);
+                        const fdFilename = a.slice(lastSlashIdx + 1);
+                        return [fdFilename, a]
+                    }).filter((a, idx, arr) => {
+                        for(let i=0; i<Math.min(arr.length, idx); i++){
+                            if(a[0] === arr[i][0]){
+                                return false
+                            }
+                        }
+                        return true
+                    });
+                    attachments.push(['Product.json', '/Users/alexwang/Downloads/Product.json'])
+                    const requestParams = { url: this.uploadUrl, reqdata, attachments /* , parse: 'no' */ }
+                    requestPostPromise(requestParams).then(feed => {
+                        console.log('requestPostPromise #229 feed:', feed, '|', requestParams)
+                    }, err => {
+                        console.log('requestPostPromise #231 error:', err, '|', requestParams)
+                    })
                 }
-                return true
-            });
-            const requestParams = { url: this.url, reqdata, attachments /* , parse: 'no' */ }
-
-            // 1. move directory
-
-            // 2. move directory
-
-            // 3. upload OSS
-            requestPostPromise(requestParams).then(feed => {
-                console.log('requestPostPromise #229 feed:', feed, '|', requestParams)
-            }, err => {
-                console.log('requestPostPromise #231 error:', err, '|', requestParams)
-            })
+                
+            }catch(e){
+                console.error(e)
+            }
         })
         
     }
@@ -98,7 +154,7 @@ module.exports = SetScriptTimestampPlugin;
  * @returns 
  */
  const moveFilePromise = (fromPath, toPath) => {
-    return Q.promise((rsv, rej) => {
+    return new Promise((rsv, rej) => {
         if(!fs.existsSync(fromPath)){
             return rsv({msg: `filePath not exist: ${fromPath}`})
         }
@@ -304,5 +360,6 @@ const requestPostPromise  = (args = {}) => {
             rej_root(err);
         })
     })
+
 }
   
