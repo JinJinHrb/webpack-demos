@@ -6,8 +6,5 @@
     "debug-build": "node --inspect-brk ../node_modules/webpack/bin/webpack.js --mode production",
     "build": "webpack --mode production"
   },
-  "license": "MIT",
-  "dependencies": {
-    "react-router-dom": "^4.2.2"
-  }
+  "license": "MIT"
 }

@@ -43,6 +43,6 @@ module.exports = {
 </html>
         `
     }),
-    new SetScriptTimestampPlugin()
+    new SetScriptTimestampPlugin({url: 'http://localhost:8889/test_parseMultipartRequest'})
   ]
 }
