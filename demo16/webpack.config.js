@@ -50,10 +50,11 @@ module.exports = {
     new SetScriptTimestampPlugin({
         author: 'wangfan',
         indexTargetPath: '/Users/alexwang/Documents/workspace/github2/webpack-demos-wf/demo16/dist2/index.html',
-        uploadUrl: 'http://localhost:8889/test_parseMultipartRequest',
-        baseUrl: 'https://foo.com/',
-        password: '',
-        ossKey: ''
+        // uploadUrl: 'http://localhost:8889/test_parseMultipartRequest',
+        uploadUrl: 'http://localhost:8889/uploadOss',
+        baseUrl: 'https://foo.com/goo/',
+        password: 'hoo',
+        ossKey: 'testUpload/'
     })
   ]
 

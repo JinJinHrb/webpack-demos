@@ -25,9 +25,12 @@ class SetScriptTimestampPlugin {
         this.baseUrl = _L.trim(params.baseUrl) // 上传 OSS 前缀
         this.password = _L.trim(params.password) // 上传 OSS 密码
         this.ossKey = _L.trim(params.ossKey) // 上传 OSS 前缀
-        if(this.baseUrl &&!_L.endsWith(this.baseUrl, '/')){
-            this.baseUrl = this.baseUrl + '/'
-        }
+        const endSlashKeys = ['baseUrl', 'ossKey']
+        endSlashKeys.forEach(k => {
+            if(this[k] && !_L.endsWith(this[k], '/')){
+                this[k] = this[k] + '/'
+            }
+        })
     }
 
     apply(compiler) {
@@ -113,6 +116,8 @@ class SetScriptTimestampPlugin {
                 if(this.uploadUrl){
                     const reqdata = {
                         author: this.author,
+                        password: this.password,
+                        ossKey: this.ossKey,
                         createdAt: hdlUtil.date2string(new Date(), 'ss')
                     };
                     const attachments = jsPaths.map((a, idx) => {
@@ -126,8 +131,7 @@ class SetScriptTimestampPlugin {
                             }
                         }
                         return true
-                    });
-                    attachments.push(['Product.json', '/Users/alexwang/Downloads/Product.json'])
+                    })
                     const requestParams = { url: this.uploadUrl, reqdata, attachments /* , parse: 'no' */ }
                     requestPostPromise(requestParams).then(feed => {
                         console.log('requestPostPromise #229 feed:', feed, '|', requestParams)
